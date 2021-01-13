@@ -1,0 +1,22 @@
+{
+  "applications": {
+    "gecko": {
+        "id": "com.nicrab.landgrabber"
+    }
+  },
+  "description": "QoL improvements to landgrab.net",
+  "manifest_version": 2,
+  "name": "Landgrabber",
+  "version": "1.0",
+  "icons": {
+    "48": "icons/landgrab.png"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["http://landgrab.net/landgrab/ViewBoard"],
+      "js": ["landgrabber.js"]
+    }
+  ]
+
+}
