@@ -89,9 +89,24 @@ function landgrabber_drawBorders (borderMap) {
             var _6b = _6a.startPoint;
             var _6c = _6a.endPoint;
             if (_6a.oneWay) {
-                var _6d = extendLine(_6b, _6c, -20);
-                var _6e = extendLine(_6c, _6b, -10);
-                window.wrappedJSObject.drawArrow(_6e, _6d, "rgb(255,0,0)", "rgb(255,255,255)");
+                var headlen = 20; // length of head in pixels\
+                var fromx = _6b.x;
+                var fromy = _6b.y;
+                var tox = _6c.x;
+                var toy = _6c.y;
+                var dx = _6c.x - _6b.x;
+                var dy = _6c.y - _6b.y;
+                var angle = Math.atan2(dy, dx);
+                ctx.beginPath();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = "#FF0000";
+                ctx.moveTo(fromx, fromy);
+                ctx.lineTo(tox, toy);
+                ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+                ctx.moveTo(tox, toy);
+                ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+                ctx.closePath();
+                ctx.stroke();
             } else {
                 ctx.lineCap = "round";
                 ctx.beginPath();
@@ -123,15 +138,19 @@ function landgrabber_drawBorders (borderMap) {
         }
     })
     let res = []
-    for (terrId in borderMap) {
+    
+    for (terrId in borderMap) {1
         let s = childMap[terrId]
+        
         borderMap[terrId].forEach(n => {
-        let neighbor = childMap[n]
-        res.push({
-            startPoint: { x: s.cx, y: s.cy },
-            oneWay: false,
-            endPoint: { x: neighbor.cx, y: neighbor.cy} 
-        })
+            const oneWay = !borderMap[n].find(x => x === parseInt(terrId,10));
+            console.log(oneWay)
+            let neighbor = childMap[n]
+            res.push({
+                startPoint: { x: s.cx, y: s.cy },
+                oneWay: oneWay,
+                endPoint: { x: neighbor.cx, y: neighbor.cy} 
+            })
         })
     }
     landgrabber_draw(res)
@@ -149,12 +168,85 @@ function landgrabber_showAllBorders (e) {
     }
 }
 
-const tr = document.createElement('tr')
-tr.innerHTML = `<tr>
-<td style="width:200px" nowrap="nowrap">
-  <input type="checkbox" name="show_all_borders" id="show_all_borders"><label for="show_all_borders">Show all borders</label>
-</td>
+function createCheckbox(n, id, la, func){
+    const tr = document.createElement('tr')
+    tr.innerHTML = `<tr>
+      <td style="width:200px" nowrap="nowrap">
+        <input type="checkbox" name="${n}" id="${id}"><label for="${id}">${la}</label>
+      </td>
+    </tr>`
+    
+    document.getElementsByClassName('control_panel_table')[0].appendChild(tr) 
+    document.getElementById(id).addEventListener('click', func)
+}
+createCheckbox('show_all_borders', 'show_all_borders', 'Show all borders', landgrabber_showAllBorders)
+
+
+
+// Show continent name and value and highlight on hover
+const continentNote = document.createElement('p')
+continentNote.id = "continent_note"
+document.getElementById('control_panel_div').appendChild(continentNote)
+continentNote.style.fontSize = 'large'
+
+const landgrabber_tOver = function (a, b) {
+    const contIndex = window.wrappedJSObject.terrToContMap.get(a);
+    let c = window.wrappedJSObject.continents[''+ contIndex]
+    document.getElementById('continent_note').innerText = (c.name +' : '+ c.value)
+    window.wrappedJSObject.highlightContTerrs(contIndex)
+    return window.wrappedJSObject.tOver(a,b)
+}
+exportFunction(landgrabber_tOver, window, {defineAs: 'landgrabber_tOver'})
+
+
+function landgrabber_showContinentUnder(e) {
+    const terrs = document.getElementsByTagName('area')
+    window.wrappedJSObject.console.warn(terrs[0].getAttribute('onmouseover'))
+    let i = 0;
+    for(terr of terrs) {
+        const cb = (e.target.checked ? 'landgrabber_' : '') + `tOver(${i++}, event)`;
+        terr.setAttribute('onmouseover', cb);
+    }
+    window.wrappedJSObject.console.warn(terrs[0].getAttribute('onmouseover'))
+}
+exportFunction(landgrabber_showContinentUnder, window, { defineAs: 'landgrabber_showContinentUnder'});
+createCheckbox('show_cont_under', 'show_cont_under', 'Show continent hover', landgrabber_showContinentUnder)
+
+
+
+// Let the player and continent list sit to the right of the map if there is room.
+function landgrabber_sideBySide() {
+    document.getElementsByClassName('data_tables_table')[0].style.display = "inline-block"
+    let map = document.getElementById('imgdiv')
+    map.style.display = "inline-block"
+    map.style.verticalAlign = "top"
+}
+landgrabber_sideBySide()
+
+
+
+// Allow for map image opacity adjustment
+let opa = 80
+// browser.storage.local.set({"opacity": opa})
+const newRow = document.createElement('tr')
+newRow.innerHTML = `<tr>
+  <td style="width:200px" nowrap="nowrap">` +
+`    <input type="number" value="${opa}" min="10" max="100" step="10" name="map_opacity" id="map_opacity" style="width: 46px;">`+
+`    <label for="map_opacity">Map opacity</label>
+  </td>
 </tr>`
 
-document.getElementsByClassName('control_panel_table')[0].appendChild(tr) 
-document.getElementById('show_all_borders').addEventListener('click', landgrabber_showAllBorders)
+document.getElementsByClassName('control_panel_table')[0].appendChild(newRow) 
+document.getElementById('map_opacity').addEventListener('change', landgrabber_mapOpacity)
+
+function landgrabber_mapOpacity() {
+    opa = Number(document.getElementById('map_opacity').value);
+    // browser.storage.local.set({"opacity": opa})
+    if(!opa) opa = 80;
+    document.getElementById('visible_map_image').style.opacity = opa / 100
+}
+exportFunction(landgrabber_mapOpacity, window, { defineAs: 'landgrabber_mapOpacity'});
+
+// need to delay this call
+window.wrappedJSObject.landdgrabber_mapOpacity();
+
