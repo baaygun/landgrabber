@@ -1,7 +1,7 @@
 {
   "applications": {
     "gecko": {
-        "id": "com.nicrab.landgrabber"
+        "id": "landgrabber@aygun.dev"
     }
   },
   "description": "QoL improvements to landgrab.net",

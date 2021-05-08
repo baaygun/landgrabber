@@ -89,9 +89,24 @@ function landgrabber_drawBorders (borderMap) {
             var _6b = _6a.startPoint;
             var _6c = _6a.endPoint;
             if (_6a.oneWay) {
-                var _6d = extendLine(_6b, _6c, -20);
-                var _6e = extendLine(_6c, _6b, -10);
-                window.wrappedJSObject.drawArrow(_6e, _6d, "rgb(255,0,0)", "rgb(255,255,255)");
+                var headlen = 20; // length of head in pixels\
+                var fromx = _6b.x;
+                var fromy = _6b.y;
+                var tox = _6c.x;
+                var toy = _6c.y;
+                var dx = _6c.x - _6b.x;
+                var dy = _6c.y - _6b.y;
+                var angle = Math.atan2(dy, dx);
+                ctx.beginPath();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = "#FF0000";
+                ctx.moveTo(fromx, fromy);
+                ctx.lineTo(tox, toy);
+                ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+                ctx.moveTo(tox, toy);
+                ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+                ctx.closePath();
+                ctx.stroke();
             } else {
                 ctx.lineCap = "round";
                 ctx.beginPath();
@@ -123,15 +138,19 @@ function landgrabber_drawBorders (borderMap) {
         }
     })
     let res = []
-    for (terrId in borderMap) {
+    
+    for (terrId in borderMap) {1
         let s = childMap[terrId]
+        
         borderMap[terrId].forEach(n => {
-        let neighbor = childMap[n]
-        res.push({
-            startPoint: { x: s.cx, y: s.cy },
-            oneWay: false,
-            endPoint: { x: neighbor.cx, y: neighbor.cy} 
-        })
+            const oneWay = !borderMap[n].find(x => x === parseInt(terrId,10));
+            console.log(oneWay)
+            let neighbor = childMap[n]
+            res.push({
+                startPoint: { x: s.cx, y: s.cy },
+                oneWay: oneWay,
+                endPoint: { x: neighbor.cx, y: neighbor.cy} 
+            })
         })
     }
     landgrabber_draw(res)
